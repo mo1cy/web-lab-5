@@ -99,6 +99,19 @@ async function handlePut(code, req, res) {
   sendText(res, 201, 'Картинку збережено');
 }
 
+async function handleDelete(code, res) {
+  try {
+    await unlink(cacheFile(code));
+    sendText(res, 200, 'Картинку видалено');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      sendText(res, 404, 'Картинки немає в кеші');
+      return;
+    }
+    throw err;
+  }
+}
+
 async function handleRequest(req, res) {
   try {
     if (!['GET', 'PUT', 'DELETE'].includes(req.method)) {
@@ -112,7 +125,7 @@ async function handleRequest(req, res) {
     }
     if (req.method === 'GET') await handleGet(code, res);
     else if (req.method === 'PUT') await handlePut(code, req, res);
-    else sendText(res, 200, `код: ${code}`);
+    else await handleDelete(code, res);
     } 
 catch (err) {
     console.error('Помилка:', err);
