@@ -83,6 +83,22 @@ async function handleGet(code, res) {
   sendImage(res, image, 'MISS');
 }
 
+async function readBody(req) {
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+async function handlePut(code, req, res) {
+  const body = await readBody(req);
+  if (body.length === 0) {
+    sendText(res, 400, 'Порожнє тіло запиту');
+    return;
+  }
+  await saveToCache(code, body);
+  sendText(res, 201, 'Картинку збережено');
+}
+
 async function handleRequest(req, res) {
   try {
     if (!['GET', 'PUT', 'DELETE'].includes(req.method)) {
@@ -95,8 +111,10 @@ async function handleRequest(req, res) {
       return;
     }
     if (req.method === 'GET') await handleGet(code, res);
+    else if (req.method === 'PUT') await handlePut(code, req, res);
     else sendText(res, 200, `код: ${code}`);
-  } catch (err) {
+    } 
+catch (err) {
     console.error('Помилка:', err);
     if (!res.headersSent) sendText(res, 500, 'Внутрішня помилка сервера');
     else res.destroy();
