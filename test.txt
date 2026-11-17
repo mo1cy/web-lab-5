@@ -1,0 +1,26 @@
+команди curl для перевірки сервера
+Сервер: node main.js -h 127.0.0.1 -p 3000 -c ./cache
+
+GET: картинки немає в кеші (X-Cache: MISS)
+curl -i http://127.0.0.1:3000/404
+
+GET: повторний запит (X-Cache: HIT)
+curl -i http://127.0.0.1:3000/404
+
+GET: неіснуючий код (404)
+curl -i http://127.0.0.1:3000/999
+
+PUT: записати власну картинку (201)
+curl -i -X PUT --data-binary @cat.jpg -H "Content-Type: image/jpeg" http://127.0.0.1:3000/404
+
+GET: після PUT повертається власна картинка (HIT, Content-Length: 30946)
+curl -i http://127.0.0.1:3000/404
+
+DELETE: видалити картинку (200)
+curl -i -X DELETE http://127.0.0.1:3000/404
+
+DELETE: повторно, картинки вже немає (404)
+curl -i -X DELETE http://127.0.0.1:3000/404
+
+Недозволений метод (405, заголовок Allow)
+curl -i -X POST http://127.0.0.1:3000/404
