@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, unlink } from 'node:fs/promises';
+import superagent from 'superagent';
 import { Command, InvalidArgumentError } from 'commander';
 import http from 'node:http'    
 
@@ -30,13 +31,71 @@ function sendText(res, status, message, extraHeaders = {}) {
   res.end(`${status}: ${message}`);
 }
 
+function getStatusCode(req) {
+  const { pathname } = new URL(req.url, 'http://localhost');
+  const match = /^\/(\d{3})$/.exec(pathname);
+  return match ? match[1] : null;
+}
+
+function cacheFile(code) {
+  return path.join(cacheDir, `${code}.jpg`);
+}
+
+function sendImage(res, image, source) {
+  res.writeHead(200, {
+    'Content-Type': 'image/jpeg',
+    'Content-Length': image.length,
+    'X-Cache': source,
+  });
+  res.end(image);
+}
+
+async function saveToCache(code, image) {
+  const target = cacheFile(code);
+  const tmp = `${target}.${process.pid}.${Date.now()}.tmp`;
+  await writeFile(tmp, image);
+  await rename(tmp, target);
+}
+
+
+async function handleGet(code, res) {
+  try {
+    const cached = await readFile(cacheFile(code));
+    sendImage(res, cached, 'HIT');
+    return;
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+
+  let image;
+  try {
+    const response = await superagent
+      .get(`https://http.cat/${code}`)
+      .buffer(true)
+      .parse(superagent.parse.image);
+    image = response.body;
+  } catch (err) {
+    sendText(res, 404, 'Картинку не знайдено');
+    return;
+  }
+
+  await saveToCache(code, image);
+  sendImage(res, image, 'MISS');
+}
+
 async function handleRequest(req, res) {
   try {
     if (!['GET', 'PUT', 'DELETE'].includes(req.method)) {
       sendText(res, 405, 'Метод не дозволено', { Allow: 'GET, PUT, DELETE' });
       return;
     }
-    sendText(res, 200, 'заглушка');
+        const code = getStatusCode(req);
+    if (!code) {
+      sendText(res, 404, 'Шлях має бути у вигляді /<код>, наприклад /404');
+      return;
+    }
+    if (req.method === 'GET') await handleGet(code, res);
+    else sendText(res, 200, `код: ${code}`);
   } catch (err) {
     console.error('Помилка:', err);
     if (!res.headersSent) sendText(res, 500, 'Внутрішня помилка сервера');
