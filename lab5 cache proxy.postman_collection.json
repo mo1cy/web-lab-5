@@ -1,0 +1,260 @@
+{
+  "info": {
+    "_postman_id": "910d5985-e881-4d85-8631-6f2f77ee25d3",
+    "name": "lab5 cache proxy",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "60265667",
+    "_collection_link": "https://go.postman.co/collection/60265667-910d5985-e881-4d85-8631-6f2f77ee25d3?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "1. GET, немає в кеші",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Content-Type image/jpeg\", () => pm.response.to.have.header(\"Content-Type\", \"image/jpeg\"));",
+              "pm.test(\"X-Cache = MISS\", () => pm.expect(pm.response.headers.get(\"X-Cache\")).to.eql(\"MISS\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/404",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "404"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. GET, повторний",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Content-Type image/jpeg\", () => pm.response.to.have.header(\"Content-Type\", \"image/jpeg\"));",
+              "pm.test(\"X-Cache = HIT\", () => pm.expect(pm.response.headers.get(\"X-Cache\")).to.eql(\"HIT\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/404",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "404"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. PUT власної картинки",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 201\", () => pm.response.to.have.status(201));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "image/jpeg"
+          }
+        ],
+        "body": {
+          "mode": "file",
+          "file": {
+            "src": "/C:/LNU/web labs/web lab 5/web-lab-5/cat.jpg"
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/404",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "404"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. GET після PUT",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Content-Type image/jpeg\", () => pm.response.to.have.header(\"Content-Type\", \"image/jpeg\"));",
+              "pm.test(\"X-Cache = HIT\", () => pm.expect(pm.response.headers.get(\"X-Cache\")).to.eql(\"HIT\"));",
+              "pm.test(\"Це моя картинка (30946 байт)\", () => pm.expect(Number(pm.response.headers.get(\"Content-Length\"))).to.eql(30946));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/404",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "404"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. DELETE існуючої",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/404",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "404"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. DELETE неіснуючої",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 404\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/404",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "404"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. GET неіснуючого коду",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 404\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "999"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. Недозволений метод",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Статус 405\", () => pm.response.to.have.status(405));",
+              "pm.test(\"Є заголовок Allow\", () => pm.response.to.have.header(\"Allow\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/404",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "404"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000"
+    }
+  ]
+}
