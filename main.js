@@ -1,8 +1,9 @@
 import path from 'node:path';
+import http from 'node:http';
+import { once } from 'node:events';
 import { mkdir, readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import superagent from 'superagent';
 import { Command, InvalidArgumentError } from 'commander';
-import http from 'node:http'    
 
 const program = new Command();
 
@@ -56,7 +57,6 @@ async function saveToCache(code, image) {
   await writeFile(tmp, image);
   await rename(tmp, target);
 }
-
 
 async function handleGet(code, res) {
   try {
@@ -118,7 +118,7 @@ async function handleRequest(req, res) {
       sendText(res, 405, 'Метод не дозволено', { Allow: 'GET, PUT, DELETE' });
       return;
     }
-        const code = getStatusCode(req);
+    const code = getStatusCode(req);
     if (!code) {
       sendText(res, 404, 'Шлях має бути у вигляді /<код>, наприклад /404');
       return;
@@ -126,8 +126,7 @@ async function handleRequest(req, res) {
     if (req.method === 'GET') await handleGet(code, res);
     else if (req.method === 'PUT') await handlePut(code, req, res);
     else await handleDelete(code, res);
-    } 
-catch (err) {
+  } catch (err) {
     console.error('Помилка:', err);
     if (!res.headersSent) sendText(res, 500, 'Внутрішня помилка сервера');
     else res.destroy();
@@ -135,6 +134,6 @@ catch (err) {
 }
 
 const server = http.createServer(handleRequest);
-server.listen(options.port, options.host, () => {
-  console.log(`Сервер: http://${options.host}:${options.port}, кеш: ${cacheDir}`);
-});
+server.listen(options.port, options.host);
+await once(server, 'listening');
+console.log(`Сервер: http://${options.host}:${options.port}, кеш: ${cacheDir}`);
